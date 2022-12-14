@@ -1,16 +1,19 @@
 import express from 'express';
-import {promises as fs} from 'fs';
+import checkFileExistsSync from '../../util/helper';
 
 const images = express.Router();
 const path = require('path');
+const sharp = require('sharp');
 
-images.get('/', (req, resp) => {
+const assetDir = '../../../assets/full/';
+const thumbDir = '../../../assets/thumb/';
 
-  let filename = req.query.filename;
-  let width = req.query.width;
-  let height = req.query.height;
+images.get('/', async (req, resp) => {
+  const filename = req.query.filename;
+  const width = req.query.width;
+  const height = req.query.height;
 
-  let isValid = filename != null && width != null && height != null;
+  const isValid = filename != null && width != null && height != null;
   if (isValid) {
     console.log(`Filename: ${filename}`);
     console.log(`Width: ${width}`);
@@ -18,41 +21,42 @@ images.get('/', (req, resp) => {
 
     // Construct the file path from input
     //console.log(__dirname);
-    let imagepath = '../../../assets/full/' + filename;
-    let filepath = path.join(__dirname, imagepath);
+    const imagepath = assetDir + filename;
+    const filepath = path.join(__dirname, imagepath + '.jpg');
+    console.log(__dirname);
     console.log(filepath);
 
-    resp.sendFile(filepath);
+    const destFilePath = path.join(
+      __dirname,
+      thumbDir + filename + '_' + width + 'x' + height + '.jpg'
+    );
+    console.log(destFilePath);
 
-    // const readData = async () => {
-    //   const myFile = await fs.access(filepath);
-    //   resp.sendFile(filepath);
-    // }
-    // Query is valid, but need to check if image exists in local filesystem
+    const sourceFileExists = checkFileExistsSync(filepath);
+    console.log(sourceFileExists);
+
+    if (sourceFileExists) {
+      console.log('Source file exists');
+
+      if (checkFileExistsSync(destFilePath)) {
+        console.log('Thumbnail exists.  Serving up cached image');
+        resp.sendFile(destFilePath);
+      } else {
+        console.log('Thumbnail does NOT exist.  Generating thumbnail');
+        const info = await sharp(filepath)
+          .resize(parseInt(width as string), parseInt(height as string))
+          .toFile(destFilePath);
+        console.log(info);
+        resp.sendFile(destFilePath);
+      }
+    } else {
+      resp.send('Source file does NOT exist.  Please check source file');
+    }
   } else {
-    resp.send('Invalid query.  Please include required parameters: filename, width, height')
+    resp.send(
+      'Invalid query.  Please include required parameters: filename, width, height'
+    );
   }
-  
-
-  //TODO: 
-  /* Need to get the URL Parameters for size
-   * and stylization if chosen.
-   *
-   * Also a library to serve properly scaled versions
-   * of the images to the front end.  API will need
-   * to handle resizing of serving stored images.
-   * 
-   * Logic:
-   * If image exists, serve it.  If parameters are
-   * provided, utilize the resizing middleware to do
-   * so, and serve up the images.
-   * 
-   * Parameters: filename, width, height
-   * 
-   * Testing:
-   * 1. Test Endpoint response
-   * 2. Image transform function should resolve or reject
-   */
 });
 
 export default images;
