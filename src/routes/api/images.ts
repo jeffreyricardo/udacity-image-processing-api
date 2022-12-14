@@ -13,48 +13,55 @@ images.get('/', async (req, resp) => {
   const width = req.query.width;
   const height = req.query.height;
 
-  const isValid = filename != null && width != null && height != null;
+  const isValid = filename != null && width != null && height != null && parseInt(width as string) > 0 && parseInt(height as string) > 0;
   if (isValid) {
-    console.log(`Filename: ${filename}`);
-    console.log(`Width: ${width}`);
-    console.log(`Height: ${height}`);
+    //console.log(`Filename: ${filename}`);
+    //console.log(`Width: ${width}`);
+    //console.log(`Height: ${height}`);
 
     // Construct the file path from input
     //console.log(__dirname);
     const imagepath = assetDir + filename;
     const filepath = path.join(__dirname, imagepath + '.jpg');
-    console.log(__dirname);
-    console.log(filepath);
+    //console.log(__dirname);
+    //console.log(filepath);
 
     const destFilePath = path.join(
       __dirname,
       thumbDir + filename + '_' + width + 'x' + height + '.jpg'
     );
-    console.log(destFilePath);
+    //console.log(destFilePath);
 
     const sourceFileExists = checkFileExistsSync(filepath);
-    console.log(sourceFileExists);
+    //console.log(sourceFileExists);
 
     if (sourceFileExists) {
-      console.log('Source file exists');
+      //console.log('Source file exists');
 
       if (checkFileExistsSync(destFilePath)) {
-        console.log('Thumbnail exists.  Serving up cached image');
+        //console.log('Thumbnail exists.  Serving up cached image');
         resp.sendFile(destFilePath);
       } else {
-        console.log('Thumbnail does NOT exist.  Generating thumbnail');
+        //console.log('Thumbnail does NOT exist.  Generating thumbnail');
         const info = await sharp(filepath)
           .resize(parseInt(width as string), parseInt(height as string))
-          .toFile(destFilePath);
-        console.log(info);
+          .toFile(destFilePath)
+          .catch((err: Error) => {
+            console.log('Error processing image. ' + err);
+            resp.send(
+              '<p>Error processing image. Please try again.</p><p>' +
+                err +
+                '</p>'
+            );
+          });
         resp.sendFile(destFilePath);
       }
     } else {
-      resp.send('Source file does NOT exist.  Please check source file');
+      resp.status(404).send('Source file does NOT exist.  Please check source file');
     }
   } else {
     resp.send(
-      'Invalid query.  Please include required parameters: filename, width, height'
+      'Invalid query.  Please include required parameters: filename, width, height.  width, height MUST BE > 0'
     );
   }
 });
