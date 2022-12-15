@@ -1,9 +1,9 @@
 import express from 'express';
-import checkFileExistsSync from '../../util/helper';
+import { checkFileExistsSync } from '../../util/helper';
+import { processImage } from '../../util/helper';
 
 const images = express.Router();
 const path = require('path');
-const sharp = require('sharp');
 
 const assetDir = '../../../assets/full/';
 const thumbDir = '../../../assets/thumb/';
@@ -37,7 +37,7 @@ images.get('/', async (req, resp) => {
     );
     //console.log(destFilePath);
 
-    const sourceFileExists = checkFileExistsSync(filepath);
+    const sourceFileExists: boolean = checkFileExistsSync(filepath);
     //console.log(sourceFileExists);
 
     if (sourceFileExists) {
@@ -48,18 +48,24 @@ images.get('/', async (req, resp) => {
         resp.sendFile(destFilePath);
       } else {
         //console.log('Thumbnail does NOT exist.  Generating thumbnail');
-        await sharp(filepath)
-          .resize(parseInt(width as string), parseInt(height as string))
-          .toFile(destFilePath)
+        await processImage(
+          filepath,
+          width as string,
+          height as string,
+          destFilePath
+        )
+          .then(() => {
+            resp.sendFile(destFilePath);
+          })
           .catch((err: Error) => {
-            console.log('Error processing image. ' + err);
+            console.log('Inside await catch Error processing image. ' + err);
+            resp.status(500);
             resp.send(
               '<p>Error processing image. Please try again.</p><p>' +
                 err +
                 '</p>'
             );
           });
-        resp.sendFile(destFilePath);
       }
     } else {
       resp
