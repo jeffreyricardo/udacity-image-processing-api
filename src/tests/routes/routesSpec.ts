@@ -13,13 +13,6 @@ describe('Testing of API Endpoints', (): void => {
     expect(response.text).toBe(message);
   });
 
-  it('Receive 200 response code when api is requested with correct number of parameters', async (): Promise<void> => {
-    const response = await supertest(app).get(
-      '/api/images?filename=frenchie&width=400&height=400'
-    );
-    expect(response.status).toBe(200);
-  });
-
   it('Receive 200 response code when api is requested with invalid parameters (invalid width/height)', async (): Promise<void> => {
     const message =
       'Invalid query.  Please include required parameters: filename, width, height.  Width and height MUST BE integer > 0';
