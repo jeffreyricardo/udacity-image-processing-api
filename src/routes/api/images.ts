@@ -13,7 +13,12 @@ images.get('/', async (req, resp) => {
   const width = req.query.width;
   const height = req.query.height;
 
-  const isValid = filename != null && width != null && height != null && parseInt(width as string) > 0 && parseInt(height as string) > 0;
+  const isValid =
+    filename != null &&
+    width != null &&
+    height != null &&
+    parseInt(width as string) > 0 &&
+    parseInt(height as string) > 0;
   if (isValid) {
     //console.log(`Filename: ${filename}`);
     //console.log(`Width: ${width}`);
@@ -43,7 +48,7 @@ images.get('/', async (req, resp) => {
         resp.sendFile(destFilePath);
       } else {
         //console.log('Thumbnail does NOT exist.  Generating thumbnail');
-        const info = await sharp(filepath)
+        await sharp(filepath)
           .resize(parseInt(width as string), parseInt(height as string))
           .toFile(destFilePath)
           .catch((err: Error) => {
@@ -57,11 +62,13 @@ images.get('/', async (req, resp) => {
         resp.sendFile(destFilePath);
       }
     } else {
-      resp.status(404).send('Source file does NOT exist.  Please check source file');
+      resp
+        .status(404)
+        .send('Source file does NOT exist.  Please check source file');
     }
   } else {
     resp.send(
-      'Invalid query.  Please include required parameters: filename, width, height.  width, height MUST BE > 0'
+      'Invalid query.  Please include required parameters: filename, width, height.  Width and height MUST BE integer > 0'
     );
   }
 });
