@@ -1,6 +1,6 @@
 import express from 'express';
-import { checkFileExistsSync } from '../../util/helper';
-import { processImage } from '../../util/helper';
+import { checkFileExistsSync } from '../../util/fileutil';
+import { processImage } from '../../util/imageutil';
 
 const images = express.Router();
 const path = require('path');
